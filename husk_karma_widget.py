@@ -83,6 +83,15 @@ class HuskKarmaWidget(QWidget):
         self.config_path = "config.ini"
         self.config = configparser.ConfigParser()
         self.config.read(self.config_path)
+
+        # Ajout automatique de la section et des valeurs par défaut si manquantes
+        if not self.config.has_section("Paths"):
+            self.config.add_section("Paths")
+            self.config.set("Paths", "HOUDINI_BIN",
+                            "C:\\Program Files\\Side Effects Software\\Houdini 20.5.487\\bin")
+            with open(self.config_path, "w") as configfile:
+                self.config.write(configfile)
+
         self.load_environment_paths()
         self.render_queue = []
 
