@@ -56,6 +56,7 @@ class SettingsDialog(QDialog):
         self.config.set("Paths", "HOUDINI_BIN", self.houdini_bin_input.text())
         with open(self.config_path, "w") as config_file:
             self.config.write(config_file)
+        self.parent().load_environment_paths()
         self.accept()
 
 
@@ -83,6 +84,7 @@ class HuskKarmaWidget(QWidget):
         self.config_path = "config.ini"
         self.config = configparser.ConfigParser()
         self.config.read(self.config_path)
+        self.load_environment_paths()
 
         # Ajout automatique de la section et des valeurs par défaut si manquantes
         if not self.config.has_section("Paths"):
