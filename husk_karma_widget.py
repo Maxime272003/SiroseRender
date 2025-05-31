@@ -56,7 +56,9 @@ class SettingsDialog(QDialog):
         self.config.set("Paths", "HOUDINI_BIN", self.houdini_bin_input.text())
         with open(self.config_path, "w") as config_file:
             self.config.write(config_file)
-        self.parent().load_environment_paths()
+
+        # Demander à la fenêtre principale de recharger les chemins
+        self.parent().parent().load_environment_paths()
         self.accept()
 
 
@@ -78,23 +80,12 @@ class DraggableLineEdit(QLineEdit):
 
 
 class HuskKarmaWidget(QWidget):
-    def __init__(self):
+    def __init__(self, config_path=None):
         super().__init__()
         self.setWindowTitle('Automatisation de Rendus Husk/Karma')
-        self.config_path = "config.ini"
+        self.config_path = config_path or "config.ini"
         self.config = configparser.ConfigParser()
         self.config.read(self.config_path)
-
-        # Ajout automatique de la section et des valeurs par défaut si manquantes
-        if not self.config.has_section("Paths"):
-            self.config.add_section("Paths")
-            self.config.set("Paths", "HOUDINI_BIN",
-                            "C:\\Program Files\\Side Effects Software\\Houdini 20.5.487\\bin")
-            with open(self.config_path, "w") as configfile:
-                self.config.write(configfile)
-            self.config.read(self.config_path)
-
-        self.load_environment_paths()
         self.render_queue = []
 
         main_layout = QVBoxLayout()
@@ -116,19 +107,9 @@ class HuskKarmaWidget(QWidget):
 
         self.setLayout(main_layout)
 
-    def load_environment_paths(self):
-        houdini_bin = self.config.get(
-            "Paths", "HOUDINI_BIN", fallback="C:\\Program Files\\Side Effects Software\\Houdini 20.5.487\\bin"
-        )
-        if houdini_bin:
-            os.environ["PATH"] = houdini_bin + ";" + os.environ["PATH"]
-
     def open_settings_dialog(self):
         dialog = SettingsDialog(self.config_path, self)
-        if dialog.exec_():
-            self.config.read(self.config_path)
-            self.load_environment_paths()
-            self.log_message("Paramètres mis à jour.")
+        dialog.exec_()
 
     def create_form_layout(self, layout):
         form_layout = QFormLayout()
