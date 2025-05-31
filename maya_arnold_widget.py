@@ -72,9 +72,7 @@ class SettingsDialog(QDialog):
                         self.qt_plugin_path_input.text())
         with open(self.config_path, "w") as config_file:
             self.config.write(config_file)
-
-        # Demander à la fenêtre principale de recharger les chemins
-        self.parent().parent().load_environment_paths()
+        self.parent().load_environment_paths()
         self.accept()
 
 
@@ -96,12 +94,25 @@ class DraggableLineEdit(QLineEdit):
 
 
 class MayaArnoldWidget(QWidget):
-    def __init__(self, config_path=None):
+    def __init__(self):
         super().__init__()
         self.setWindowTitle('Automatisation de Rendus Maya/Arnold')
-        self.config_path = config_path or "config.ini"
+        self.config_path = "config.ini"
         self.config = configparser.ConfigParser()
         self.config.read(self.config_path)
+
+        # Ajout automatique de la section et des valeurs par défaut si manquantes
+        if not self.config.has_section("Paths"):
+            self.config.add_section("Paths")
+            self.config.set("Paths", "MAYA_PATH",
+                            "C:\\Program Files\\Autodesk\\Maya2024\\bin")
+            self.config.set("Paths", "QT_PLUGIN_PATH",
+                            "C:\\Program Files\\Autodesk\\Maya2024\\plugins")
+            with open(self.config_path, "w") as configfile:
+                self.config.write(configfile)
+            self.config.read(self.config_path)
+
+        self.load_environment_paths()
         self.render_queue = []
 
         main_layout = QVBoxLayout()
@@ -157,7 +168,10 @@ class MayaArnoldWidget(QWidget):
 
     def open_settings_dialog(self):
         dialog = SettingsDialog(self.config_path, self)
-        dialog.exec_()
+        if dialog.exec_():
+            self.config.read(self.config_path)
+            self.load_environment_paths()
+            self.log_message("Paramètres mis à jour.")
 
     def create_form_layout(self, layout):
         form_layout = QFormLayout()

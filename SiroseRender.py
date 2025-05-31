@@ -59,15 +59,11 @@ class MainWindow(QMainWindow):
         )
         self.setWindowIcon(QIcon(icon_path))
 
-        # Gestion du thème sauvegardé et des chemins d'environnement
+        # Gestion du thème sauvegardé
         self.config_path = "config.ini"
         self.config = configparser.ConfigParser()
-
-        # S'assurer que le fichier de config existe avec les sections nécessaires
-        self.initialize_config()
-
-        # Charger les chemins d'environnement avant la création des widgets
-        self.load_environment_paths()
+        self.config.read(self.config_path)
+        self.theme_mode = self.config.get("Theme", "mode", fallback="light")
 
         toolbar = QToolBar("Theme")
         self.addToolBar(toolbar)
@@ -113,8 +109,8 @@ class MainWindow(QMainWindow):
 
         # Onglets
         self.tabs = QTabWidget()
-        self.maya_widget = MayaArnoldWidget(self.config_path)
-        self.husk_widget = HuskKarmaWidget(self.config_path)
+        self.maya_widget = MayaArnoldWidget()
+        self.husk_widget = HuskKarmaWidget()
         self.tabs.addTab(self.maya_widget, "Maya/Arnold")
         self.tabs.addTab(self.husk_widget, "Houdini/Karma")
         self.setCentralWidget(self.tabs)
@@ -122,78 +118,6 @@ class MainWindow(QMainWindow):
 
         # Appliquer le thème au démarrage
         self.apply_theme()
-
-    def initialize_config(self):
-        self.config.read(self.config_path)
-
-        # S'assurer que la section Theme existe
-        if not self.config.has_section("Theme"):
-            self.config.add_section("Theme")
-            self.config.set("Theme", "mode", "light")
-
-        # S'assurer que la section Paths existe avec les valeurs par défaut
-        if not self.config.has_section("Paths"):
-            self.config.add_section("Paths")
-            self.config.set("Paths", "MAYA_PATH",
-                            "C:\\Program Files\\Autodesk\\Maya2024\\bin")
-            self.config.set("Paths", "QT_PLUGIN_PATH",
-                            "C:\\Program Files\\Autodesk\\Maya2024\\plugins")
-            self.config.set("Paths", "HOUDINI_BIN",
-                            "C:\\Program Files\\Side Effects Software\\Houdini 20.5.487\\bin")
-
-        # Sauvegarder la configuration
-        with open(self.config_path, "w") as configfile:
-            self.config.write(configfile)
-
-        # Relire la configuration après l'avoir écrite
-        self.config.read(self.config_path)
-        self.theme_mode = self.config.get("Theme", "mode", fallback="light")
-
-    def load_environment_paths(self):
-        """Charge tous les chemins d'environnement nécessaires pour les renderers"""
-        # Chemins Maya
-        maya_path = self.config.get("Paths", "MAYA_PATH",
-                                    fallback="C:\\Program Files\\Autodesk\\Maya2024\\bin")
-        qt_plugin_path = self.config.get("Paths", "QT_PLUGIN_PATH",
-                                         fallback="C:\\Program Files\\Autodesk\\Maya2024\\plugins")
-
-        # Chemin Houdini
-        houdini_bin = self.config.get("Paths", "HOUDINI_BIN",
-                                      fallback="C:\\Program Files\\Side Effects Software\\Houdini 20.5.487\\bin")
-
-        # Configuration Maya/Arnold
-        if os.path.exists(maya_path):
-            os.environ["PATH"] = maya_path + ";" + os.environ["PATH"]
-
-        if os.path.exists(qt_plugin_path):
-            os.environ["QT_PLUGIN_PATH"] = qt_plugin_path
-
-        # Configuration Arnold
-        arnold_root = "C:\\Program Files\\Autodesk\\Arnold\\maya2024"
-        arnold_plugin = arnold_root + "\\plug-ins"
-        arnold_bin = arnold_root + "\\bin"
-        arnold_python = arnold_root + "\\scripts"
-
-        if os.path.exists(arnold_bin):
-            os.environ["PATH"] = arnold_bin + ";" + os.environ["PATH"]
-
-        if os.path.exists(arnold_plugin):
-            if "MAYA_PLUG_IN_PATH" in os.environ:
-                os.environ["MAYA_PLUG_IN_PATH"] = arnold_plugin + \
-                    ";" + os.environ["MAYA_PLUG_IN_PATH"]
-            else:
-                os.environ["MAYA_PLUG_IN_PATH"] = arnold_plugin
-
-        if os.path.exists(arnold_python):
-            if "PYTHONPATH" in os.environ:
-                os.environ["PYTHONPATH"] = arnold_python + \
-                    ";" + os.environ["PYTHONPATH"]
-            else:
-                os.environ["PYTHONPATH"] = arnold_python
-
-        # Configuration Houdini
-        if os.path.exists(houdini_bin):
-            os.environ["PATH"] = houdini_bin + ";" + os.environ["PATH"]
 
     def open_history(self):
         dlg = HistoryDialog(self)
