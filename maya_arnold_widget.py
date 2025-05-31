@@ -100,7 +100,6 @@ class MayaArnoldWidget(QWidget):
         self.config_path = "config.ini"
         self.config = configparser.ConfigParser()
         self.config.read(self.config_path)
-        self.load_environment_paths()
 
         # Ajout automatique de la section et des valeurs par défaut si manquantes
         if not self.config.has_section("Paths"):
@@ -111,6 +110,7 @@ class MayaArnoldWidget(QWidget):
                             "C:\\Program Files\\Autodesk\\Maya2024\\plugins")
             with open(self.config_path, "w") as configfile:
                 self.config.write(configfile)
+            self.config.read(self.config_path)
 
         self.load_environment_paths()
         self.render_queue = []
